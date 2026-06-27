@@ -1,26 +1,328 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Class-based dark mode: `dark:` utilities activate when the `dark` class
+   is present on `<html>` (or any ancestor). Without this, Tailwind v4
+   defaults to the `prefers-color-scheme` media query, which ignores the
+   toggle button. */
+@custom-variant dark (&:where(.dark, .dark *));
 
+/* Google Calendar Color Tokens */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-gcal-blue: #1a73e8;
+  --color-gcal-blue-dark: #1557b0;
+  --color-gcal-red: #d50000;
+  --color-gcal-flamingo: #e67c73;
+  --color-gcal-tangerine: #f4511e;
+  --color-gcal-banana: #f6bf26;
+  --color-gcal-sage: #33b679;
+  --color-gcal-basil: #0b8043;
+  --color-gcal-peacock: #039be5;
+  --color-gcal-blueberry: #3f51b5;
+  --color-gcal-lavender: #7986cb;
+  --color-gcal-grape: #8e24aa;
+  --color-gcal-graphite: #616161;
+
+  --color-gcal-bg: #ffffff;
+  --color-gcal-border: #e0e0e0;
+  --color-gcal-surface: #f8f9fa;
+  --color-gcal-shell: #f8fafd;
+  --color-gcal-text-muted: #70757a;
+  --color-gcal-text: #202124;
+  --color-gcal-current-time: #ea4335;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode */
+:root {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --border: #e0e0e0;
+  --text: #202124;
+  --text-muted: #70757a;
+}
+
+.dark {
+  --bg: #1f1f1f;
+  --surface: #2d2d2d;
+  --border: #3d3d3d;
+  --text: #e8eaed;
+  --text-muted: #9aa0a6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #dadce0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}
+
+/* Reserve a stable scrollbar gutter so percentage-positioned dividers
+   stay perfectly aligned across stacked horizontal sections (day-header,
+   all-day row, time-grid) when the bottom one scrolls vertically. */
+.scroll-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Calendar grid time slots */
+.time-slot {
+  height: 60px; /* 60px per hour = 1px per minute */
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+/* Event block styles */
+.event-block {
+  position: absolute;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  overflow: hidden;
+  cursor: pointer;
+  transition: filter 0.1s ease, box-shadow 0.1s ease;
+  user-select: none;
+  z-index: 10;
+  /* Disable native drag image / ghost on the block */
+  -webkit-user-drag: none;
+}
+
+.event-block:hover {
+  filter: brightness(0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.event-block:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.event-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: row-resize;
+  opacity: 0;
+  transition: opacity 0.1s;
+  /* Larger invisible hit area for easier grabbing */
+  padding-bottom: 4px;
+  margin-bottom: -4px;
+}
+
+.event-block:hover .event-resize-handle,
+.event-block:focus-within .event-resize-handle {
+  opacity: 1;
+}
+
+/* Current time indicator (live line + dot) is rendered inline in
+   TimeGrid.tsx with arbitrary left offsets — no CSS class needed here. */
+
+/* Mini calendar day */
+.mini-cal-day {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.mini-cal-day:hover {
+  background: #f1f3f4;
+}
+
+.dark .mini-cal-day:hover {
+  background: #3d3d3d;
+}
+
+.mini-cal-day.today {
+  background: #1a73e8;
+  color: white;
+}
+
+.mini-cal-day.selected {
+  background: #d2e3fc;
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+/* Sidebar event list (under mini calendar) */
+.sidebar-event-day {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #202124;
+  padding: 12px 14px 6px;
+}
+
+.dark .sidebar-event-day {
+  color: #e8eaed;
+}
+
+.sidebar-event-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: #202124;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 9999px;
+  margin: 2px 8px;
+}
+
+.sidebar-event-item:hover {
+  background: #e8f0fe;
+}
+
+.dark .sidebar-event-item {
+  color: #e8eaed;
+}
+
+.dark .sidebar-event-item:hover {
+  background: #2d2d2d;
+}
+
+.sidebar-event-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sidebar-event-time {
+  font-size: 13px;
+  color: #5f6368;
+  min-width: 58px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .sidebar-event-time {
+  color: #9aa0a6;
+}
+
+.sidebar-event-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sidebar-event-more {
+  padding: 6px 24px 8px;
+  font-size: 13px;
+  color: #1a73e8;
+  cursor: pointer;
+  border-radius: 9999px;
+  margin: 2px 8px;
+}
+
+.sidebar-event-more:hover {
+  background: #e8f0fe;
+  text-decoration: none;
+}
+
+.dark .sidebar-event-more:hover {
+  background: #2d2d2d;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes fadeScaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Accessibility: focus visibility & reduced motion
+   ----------------------------------------------------------------------
+   Per WCAG 2.4.7 and Apple/Material guidelines, all interactive
+   elements must show a visible focus ring. We use a brand-coloured
+   2px ring with a 2px offset so it sits outside the element bounds.
+   prefers-reduced-motion users get all non-essential transitions
+   suppressed while preserving semantic opacity/transform changes.
+   ───────────────────────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-gcal-blue, #1a73e8);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-gcal-blue, #1a73e8);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Improved text contrast for muted text on dark mode */
+.dark .text-gray-500 {
+  color: #9aa0a6;
+}
+.dark .text-gray-400 {
+  color: #bdc1c6;
+}
+.dark .placeholder-gray-400::placeholder {
+  color: #9aa0a6;
+  opacity: 1;
+}
+
+/* Visible 44x44 hit target for tiny color swatches via min-width */
+button[role="radio"] {
+  min-width: 36px;
+  min-height: 36px;
 }

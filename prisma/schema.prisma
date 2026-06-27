@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String?  // null for OAuth users
+  image     String?
+  createdAt DateTime @default(now())
+  accounts  Account[]
+  sessions  Session[]
+  calendars Calendar[]
+  events    Event[]
+  tasks     Task[]
+}
+
+model Calendar {
+  id      String  @id @default(cuid())
+  name    String
+  color   String  @default("#1a73e8") // hex
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events  Event[]
+}
+
+model Event {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  location     String?
+  startUtc     DateTime  // always stored UTC
+  endUtc       DateTime  // always stored UTC
+  isAllDay     Boolean   @default(false)
+  color        String?   // overrides calendar color
+
+  calendarId   String
+  calendar     Calendar  @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Recurrence
+  recurrenceRule  String?   // RRULE string e.g. "FREQ=WEEKLY;BYDAY=MO,WE"
+  recurrenceId    String?   // parent event id for instances
+  isException     Boolean   @default(false)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  dueUtc      DateTime? // scheduled date+time (UTC); null = unscheduled
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  color       String?   // overrides accent
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, dueUtc])
+  @@index([userId, completed])
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
