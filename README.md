@@ -2,7 +2,7 @@
 
 A high-fidelity, full-stack Google Calendar clone built with Next.js, Prisma, and PostgreSQL. Features real-time **Events** and **Tasks** management, recurring events, drag-and-drop interactions, and timezone-aware scheduling.
 
-**[Live Demo](https://gcal-clone.vercel.app)** | **[GitHub Repo](https://github.com/username/gcal-clone)**
+**[Live Demo](calendar-tawny-rho.vercel.app)** | **[GitHub Repo](https://github.com/bhavyaTomar2711/calendar)**
 
 ---
 
