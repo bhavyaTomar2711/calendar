@@ -9,6 +9,21 @@ import { HOUR_HEIGHT, MIN_EVENT_DURATION } from '@/lib/constants'
 const TOTAL_MINUTES = 24 * 60
 const SNAP_MIN = 15
 
+/**
+ * Expansion IDs from `expandRecurring` look like `${parentId}_${isoDate}`.
+ * The underscore separates the real DB id from the virtual occurrence date.
+ * Returns the parent id + the occurrence start date, or null if the id
+ * is not a synthetic expansion.
+ */
+function parseExpansionId(id: string): { parentId: string; occStart: string } | null {
+  const idx = id.lastIndexOf('_')
+  if (idx <= 0) return null
+  const tail = id.slice(idx + 1)
+  // Occurrence dates serialize as YYYY-MM-DDTHH:MM:SS.sssZ — must start with a 4-digit year
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(tail)) return null
+  return { parentId: id.slice(0, idx), occStart: tail }
+}
+
 interface EventBlockProps {
   event: CalendarEvent
   top: number       // px from top of grid (= minutes since midnight)
@@ -115,14 +130,29 @@ export default function EventBlock({
         const origStartIso = startDate.toISOString()
         const origEndIso = endDate.toISOString()
 
+        // Expansion ids (from rrule expansion) reference a virtual occurrence,
+        // not a real DB row. Resolve the parent id and route to the API's
+        // recurring scope handler so the change applies correctly.
+        const expansion = parseExpansionId(event.id)
+        const apiId = expansion ? expansion.parentId : event.id
+        const payload: Record<string, unknown> = {
+          startUtc: newStartIso,
+          endUtc: newEndIso,
+        }
+        if (expansion) {
+          // 'this' shifts only this occurrence via an exception row.
+          payload.scope = 'this'
+          payload._occStart = expansion.occStart
+        }
+
         // Optimistic store update
         updateEvent(event.id, { startUtc: newStartIso, endUtc: newEndIso })
 
         try {
-          const res = await fetch(`/api/events/${event.id}`, {
+          const res = await fetch(`/api/events/${apiId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ startUtc: newStartIso, endUtc: newEndIso }),
+            body: JSON.stringify(payload),
           })
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
           onSaved()
@@ -197,11 +227,19 @@ export default function EventBlock({
         const finalEndIso = newEnd.toISOString()
         updateEvent(event.id, { endUtc: finalEndIso })
 
+        const expansion = parseExpansionId(event.id)
+        const apiId = expansion ? expansion.parentId : event.id
+        const payload: Record<string, unknown> = { endUtc: finalEndIso }
+        if (expansion) {
+          payload.scope = 'this'
+          payload._occStart = expansion.occStart
+        }
+
         try {
-          const res = await fetch(`/api/events/${event.id}`, {
+          const res = await fetch(`/api/events/${apiId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endUtc: finalEndIso }),
+            body: JSON.stringify(payload),
           })
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
           onSaved()

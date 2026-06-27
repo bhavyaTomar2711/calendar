@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { truncateRRule } from '@/lib/utils/recurrence'
+import { truncateRRule, appendExdateToRRule } from '@/lib/utils/recurrence'
 
 // GET /api/events/[id]
 export async function GET(
@@ -49,6 +49,7 @@ export async function PUT(
     calendarId,
     recurrenceRule,
     scope, // 'this' | 'following' | 'all'
+    _occStart, // ISO string — when dragging a recurring occurrence, identifies which one
   } = body
 
   const start = startUtc ? new Date(startUtc) : undefined
@@ -159,7 +160,7 @@ export async function PUT(
   return NextResponse.json(updated)
 }
 
-// DELETE /api/events/[id]?scope=this|all
+// DELETE /api/events/[id]?scope=this|following|all
 export async function DELETE(
   request: NextRequest,
   ctx: RouteContext<'/api/events/[id]'>
@@ -172,6 +173,13 @@ export async function DELETE(
   const { id } = await ctx.params
   const { searchParams } = new URL(request.url)
   const scope = searchParams.get('scope') ?? 'this'
+  const occStartParam = searchParams.get('occStart')
+
+  // For occurrences of a recurring series, `id` is the parent id and
+  // `occStart` is the ISO date of the specific occurrence to act on.
+  // For the parent itself, `id` is the parent and `occStart` is omitted
+  // (we default to the parent's own startUtc).
+  const targetStartUtc = occStartParam ? new Date(occStartParam) : null
 
   const existing = await prisma.event.findFirst({
     where: { id, userId: session.user.id },
@@ -181,19 +189,46 @@ export async function DELETE(
     return NextResponse.json({ error: 'Event not found' }, { status: 404 })
   }
 
-  if (scope === 'all' && (existing.recurrenceRule || existing.recurrenceId)) {
-    const parentId = existing.recurrenceId ?? existing.id
-    // Delete parent and all exceptions
-    await prisma.event.deleteMany({
-      where: {
-        userId: session.user.id,
-        OR: [{ id: parentId }, { recurrenceId: parentId }],
-      },
+  // For an occurrence of a recurring series, find the parent rule + start time
+  // so we can build the correct exception / split.
+  const parentId = existing.recurrenceId ?? existing.id
+  const parent = existing.recurrenceId
+    ? await prisma.event.findFirst({
+        where: { id: parentId, userId: session.user.id },
+      })
+    : existing
+
+  // scope=this: delete only this occurrence by storing an EXDATE on the
+  // parent RRULE so rrule expansion skips it. We don't actually persist an
+  // exception row — RRULE expansion handles the deletion on read.
+  if (scope === 'this' && parent?.recurrenceRule) {
+    const exdate = targetStartUtc ?? existing.startUtc
+    const updatedRule = appendExdateToRRule(parent.recurrenceRule, exdate)
+    await prisma.event.update({
+      where: { id: parentId },
+      data: { recurrenceRule: updatedRule },
     })
-    return NextResponse.json({ deleted: true, scope: 'all' })
+    return NextResponse.json({ deleted: true, scope: 'this' })
   }
 
-  // Delete just this event / exception
-  await prisma.event.delete({ where: { id } })
-  return NextResponse.json({ deleted: true, scope: 'this' })
+  // scope=following: truncate parent RRULE so it stops before this date.
+  if (scope === 'following' && parent?.recurrenceRule) {
+    const cutoff = targetStartUtc ?? existing.startUtc
+    const dayBefore = new Date(cutoff.getTime() - 86400000)
+    const truncated = truncateRRule(parent.recurrenceRule, dayBefore)
+    await prisma.event.update({
+      where: { id: parentId },
+      data: { recurrenceRule: truncated },
+    })
+    return NextResponse.json({ deleted: true, scope: 'following' })
+  }
+
+  // scope=all (or non-recurring): hard delete parent + all exceptions.
+  await prisma.event.deleteMany({
+    where: {
+      userId: session.user.id,
+      OR: [{ id: parentId }, { recurrenceId: parentId }],
+    },
+  })
+  return NextResponse.json({ deleted: true, scope: 'all' })
 }

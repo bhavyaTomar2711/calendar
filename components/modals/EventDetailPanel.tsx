@@ -321,22 +321,38 @@ export default function EventDetailPanel({ onEventSaved }: EventDetailPanelProps
     }
   }, [selectedItem, isExistingEvent, handleSaveEvent, handleSaveTask])
 
-  const handleDeleteEvent = useCallback(
+    const handleDeleteEvent = useCallback(
     async (scope: EditScope) => {
       if (!selectedItem || selectedItem.kind !== 'event' || isNewEvent) return
       setDeleting(true)
       setError(null)
       try {
-        const res = await fetch(
-          `/api/events/${selectedItem.data.id}?scope=${scope}`,
-          { method: 'DELETE' }
-        )
+        // Expansion ids look like `${parentId}_${isoDate}`. They reference a
+        // virtual occurrence, not a real DB row — strip the trailing date
+        // so the API call hits the parent.
+        const rawId = selectedItem.data.id as string
+        const underscoreIdx = rawId.lastIndexOf('_')
+        let parentId = rawId
+        let occStart: string | null = null
+        if (underscoreIdx > 0) {
+          const tail = rawId.slice(underscoreIdx + 1)
+          if (/^\d{4}-\d{2}-\d{2}T/.test(tail)) {
+            parentId = rawId.slice(0, underscoreIdx)
+            occStart = tail
+          }
+        }
+
+        const url = occStart
+          ? `/api/events/${parentId}?scope=${scope}&occStart=${encodeURIComponent(occStart)}`
+          : `/api/events/${parentId}?scope=${scope}`
+
+        const res = await fetch(url, { method: 'DELETE' })
         // 404 means the row is already gone — treat as success so the
         // local store still gets cleaned up.
         if (!res.ok && res.status !== 404) {
           throw new Error(`HTTP ${res.status}`)
         }
-        deleteEvent(selectedItem.data.id as string)
+        deleteEvent(rawId)
         closeDetailPanel()
         onEventSaved()
       } catch (err) {
