@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
   }
 
   const events = await prisma.event.findMany({ where })
+  type PrismaEvent = (typeof events)[number]
 
   // Separate recurring parent events from regular and exception events
 const recurring = events.filter(e => e.recurrenceRule && !e.isException)
