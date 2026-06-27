@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Event } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { expandRecurring, type EventLike } from '@/lib/utils/recurrence'
@@ -83,9 +84,9 @@ export async function GET(request: NextRequest) {
   const events = await prisma.event.findMany({ where })
 
   // Separate recurring parent events from regular and exception events
-  const recurring = events.filter((e) => e.recurrenceRule && !e.isException)
-  const exceptions = events.filter((e) => e.isException)
-  const regular = events.filter((e) => !e.recurrenceRule && !e.isException)
+const recurring = events.filter(e => e.recurrenceRule && !e.isException)
+const exceptions = events.filter(e => e.isException)
+const regular = events.filter(e => !e.recurrenceRule && !e.isException)
 
   // Expand recurring events
   const expanded: typeof events = []
