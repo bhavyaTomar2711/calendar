@@ -35,7 +35,7 @@ export default function WeekView({ onEventSaved }: WeekViewProps) {
           inside the rounded card (no clipping at the top). */}
       <div className="flex shrink-0 bg-white dark:bg-[#1f1f1f]">
         {/* Time label gutter — sized to match the time column in TimeGrid */}
-        <div className="shrink-0" style={{ width: TIME_GUTTER }} />
+        <div className="shrink-0 w-10 md:w-[72px]" />
         <div className="flex-1 relative min-h-[96px] pt-7 pb-3">
           {days.map((day, i) => {
             const isToday = isSameDay(toUserTz(day, tz), toUserTz(today, tz))
@@ -50,7 +50,7 @@ export default function WeekView({ onEventSaved }: WeekViewProps) {
               >
                 <div className="flex flex-col items-center justify-center text-center">
                   <div
-                    className={`text-[12px] font-semibold uppercase tracking-wide mb-2 leading-none ${
+                    className={`text-[10px] md:text-[12px] font-semibold uppercase tracking-wide mb-1 md:mb-2 leading-none ${
                       isToday
                         ? 'text-[#1a73e8]'
                         : 'text-[#5f6368] dark:text-gray-300'
@@ -59,11 +59,11 @@ export default function WeekView({ onEventSaved }: WeekViewProps) {
                     {format(day, 'EEE')}
                   </div>
                   <div
-                    className={`text-[28px] flex items-center justify-center rounded-full leading-none transition-colors
+                    className={`text-[16px] md:text-[28px] flex items-center justify-center rounded-full leading-none transition-colors
                       ${
                         isToday
-                          ? 'bg-[#1a73e8] text-white w-11 h-11 font-medium'
-                          : 'text-[#3c4043] dark:text-gray-200 w-11 h-11 font-normal'
+                          ? 'bg-[#1a73e8] text-white w-8 h-8 md:w-11 md:h-11 font-medium'
+                          : 'text-[#3c4043] dark:text-gray-200 w-8 h-8 md:w-11 md:h-11 font-normal'
                       }`}
                   >
                     {format(day, 'd')}

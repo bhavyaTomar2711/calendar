@@ -216,8 +216,7 @@ export default function TimeGrid({ days, onSaved }: TimeGridProps) {
       <div className="flex shrink-0">
         {/* Time label gutter */}
         <div
-          className="shrink-0 px-3 py-2 text-right"
-          style={{ width: TIME_GUTTER }}
+          className="shrink-0 px-1 md:px-3 py-2 text-right w-10 md:w-[72px]"
         >
           {days.length === 1 ? (
             <span className="text-[10px] text-[#70757a] dark:text-gray-400 font-medium">
@@ -276,14 +275,13 @@ export default function TimeGrid({ days, onSaved }: TimeGridProps) {
         <div className="flex" style={{ height: totalHeight }}>
           {/* Time labels column — 72px wide, right-aligned, sits at top of each hour */}
           <div
-            className="shrink-0 relative select-none"
-            style={{ width: TIME_GUTTER }}
+            className="shrink-0 relative select-none w-10 md:w-[72px]"
             aria-hidden="true"
           >
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="absolute right-3 text-[12px] text-[#70757a] dark:text-gray-400 font-normal"
+                className="absolute right-1.5 md:right-3 text-[10px] md:text-[12px] text-[#70757a] dark:text-gray-400 font-normal whitespace-nowrap"
                 style={{ top: h * HOUR_HEIGHT - 8, transform: 'translateY(-50%)' }}
               >
                 {formatHour(h)}

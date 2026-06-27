@@ -24,6 +24,7 @@ export default function Sidebar({ onEventSaved }: SidebarProps) {
     toggleCalendarVisibility,
     updateCalendar,
     deleteCalendar,
+    setSidebarOpen,
   } = useCalendarStore()
 
   const [miniMonth, setMiniMonth] = useState(new Date())
@@ -110,7 +111,14 @@ export default function Sidebar({ onEventSaved }: SidebarProps) {
   if (!sidebarOpen) return null
 
   return (
-    <aside className="w-64 shrink-0 bg-[#f8fafd] dark:bg-[#141414] flex flex-col overflow-y-auto">
+    <>
+      {/* Mobile overlay */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity top-[56px]" 
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className="fixed top-[56px] bottom-0 left-0 z-40 md:relative md:z-0 w-64 shrink-0 bg-[#f8fafd] dark:bg-[#141414] flex flex-col overflow-y-auto shadow-[2px_0_8px_rgba(0,0,0,0.15)] md:shadow-none transition-transform">
       {/* Create button — rounded rectangle with a deep drop shadow; no circle on the + */}
       <div className="px-5 pt-8 pb-8">
         <button
@@ -412,5 +420,6 @@ export default function Sidebar({ onEventSaved }: SidebarProps) {
         </div>
       )}
     </aside>
+    </>
   )
 }

@@ -26,7 +26,15 @@ export default function CalendarPage() {
     setTasks,
     setCalendars,
     setIsLoadingEvents,
+    setSidebarOpen,
   } = useCalendarStore()
+
+  // Auto-close sidebar on mobile devices on mount
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }, [setSidebarOpen])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -163,8 +171,8 @@ export default function CalendarPage() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onEventSaved={refreshAll} />
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 pl-3 pr-10 pb-6 pt-2 overflow-hidden">
-            <div className="h-full overflow-hidden rounded-3xl bg-white dark:bg-[#1f1f1f] shadow-[0_1px_2px_rgba(60,64,67,0.04),0_2px_8px_rgba(60,64,67,0.04)]">
+          <div className="flex-1 p-1.5 pb-2 md:p-0 md:pl-3 md:pr-10 md:pb-6 md:pt-2 overflow-hidden">
+            <div className="h-full overflow-hidden rounded-xl md:rounded-3xl bg-white dark:bg-[#1f1f1f] shadow-[0_1px_2px_rgba(60,64,67,0.04),0_2px_8px_rgba(60,64,67,0.04)] md:shadow-md border border-gray-100 dark:border-[#3d3d3d] md:border-none">
               {currentView === 'week' && <WeekView onEventSaved={refreshAll} />}
               {currentView === 'month' && <MonthView onEventSaved={refreshAll} />}
               {currentView === 'day' && <DayView onEventSaved={refreshAll} />}

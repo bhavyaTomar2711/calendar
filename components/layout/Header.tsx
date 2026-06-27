@@ -62,22 +62,31 @@ export default function Header({ onEventSaved: _onEventSaved }: HeaderProps) {
 
   return (
     <header
-      className="grid items-center shrink-0 bg-[#f8fafd] dark:bg-[#1f1f1f] px-4 gap-1"
+      className="flex md:grid items-center shrink-0 bg-[#f8fafd] dark:bg-[#1f1f1f] px-2 md:px-4 gap-1 w-full justify-between md:justify-start relative z-50"
       style={{
-        gridTemplateColumns: `${SIDEBAR_WIDTH}px 1fr`,
-        height: 64,
+        // On desktop, we use the grid. On mobile, we rely on flex.
       }}
     >
-      {/* Left zone — matches sidebar width, holds hamburger + logo */}
-      <div className="flex items-center gap-1 min-w-0">
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (min-width: 768px) {
+          header { grid-template-columns: ${SIDEBAR_WIDTH}px 1fr; height: 64px; }
+        }
+        @media (max-width: 767px) {
+          header { height: 56px; border-bottom: 1px solid #e5e7eb; }
+          .dark header { border-bottom-color: #3d3d3d; }
+        }
+      `}} />
+      
+      {/* Left zone — matches sidebar width on desktop, holds hamburger + logo */}
+      <div className="flex items-center gap-1 min-w-0 shrink-0">
         <button
           id="sidebar-toggle-btn"
           onClick={toggleSidebar}
-          className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-[#3d3d3d] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]"
+          className="p-2 md:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-[#3d3d3d] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]"
           aria-label="Toggle sidebar"
         >
           <svg
-            className="w-[22px] h-[22px] text-[#202124] dark:text-gray-100"
+            className="w-5 h-5 md:w-[22px] md:h-[22px] text-[#202124] dark:text-gray-100"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -91,8 +100,8 @@ export default function Header({ onEventSaved: _onEventSaved }: HeaderProps) {
           </svg>
         </button>
 
-        <div className="flex items-center gap-2 mr-4 min-w-0">
-          <svg viewBox="0 0 24 24" className="w-9 h-9 shrink-0" fill="none">
+        <div className="flex items-center gap-2 mr-0 md:mr-4 min-w-0">
+          <svg viewBox="0 0 24 24" className="w-8 h-8 md:w-9 md:h-9 shrink-0" fill="none">
             <path
               d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"
               fill="#1a73e8"
@@ -103,24 +112,24 @@ export default function Header({ onEventSaved: _onEventSaved }: HeaderProps) {
               fill="#1a73e8"
             />
           </svg>
-          <span className="text-[22px] font-normal text-[#202124] dark:text-gray-100 hidden sm:block tracking-tight truncate">
+          <span className="text-[20px] md:text-[22px] font-normal text-[#202124] dark:text-gray-100 hidden sm:block tracking-tight truncate">
             Calendar
           </span>
         </div>
       </div>
 
-      {/* Right zone — starts at right edge of sidebar; contains Today/nav/date + all right controls */}
-      <div className="flex items-center gap-1 min-w-0 pl-3">
+      {/* Right zone — starts at right edge of sidebar on desktop */}
+      <div className="flex items-center gap-1 md:pl-3 min-w-0 flex-1 justify-between md:justify-start">
         {/* Today + nav + date label */}
         <div className="flex items-center gap-2 mr-auto min-w-0">
           <button
             id="header-today-btn"
             onClick={handleToday}
-            className="px-6 py-2 text-[16px] font-medium text-[#202124] dark:text-gray-100 border border-[#9aa0a6] dark:border-[#5f6368] rounded-full hover:text-[#1a73e8] hover:border-[#1a73e8] hover:bg-[#e8f0fe] dark:hover:bg-[#2d2d2d] dark:hover:text-[#8ab4f8] dark:hover:border-[#8ab4f8] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8] min-h-[40px] shrink-0"
+            className="flex px-3 md:px-6 py-1.5 md:py-2 text-[14px] md:text-[16px] font-medium text-[#202124] dark:text-gray-100 border border-[#9aa0a6] dark:border-[#5f6368] rounded-full hover:text-[#1a73e8] hover:border-[#1a73e8] hover:bg-[#e8f0fe] dark:hover:bg-[#2d2d2d] dark:hover:text-[#8ab4f8] dark:hover:border-[#8ab4f8] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8] min-h-[32px] md:min-h-[40px] shrink-0"
           >
             Today
           </button>
-          <div className="flex items-center shrink-0">
+          <div className="hidden md:flex items-center shrink-0">
             <button
               id="header-prev-btn"
               onClick={handlePrev}
@@ -145,7 +154,7 @@ export default function Header({ onEventSaved: _onEventSaved }: HeaderProps) {
           <h2
             id="header-date-label"
             aria-live="polite"
-            className="text-xl md:text-2xl font-normal text-[#202124] dark:text-gray-100 ml-1 select-none truncate"
+            className="text-[16px] md:text-2xl font-normal text-[#202124] dark:text-gray-100 ml-1 select-none truncate hidden sm:block"
           >
             {dateLabel}
           </h2>
@@ -198,7 +207,7 @@ export default function Header({ onEventSaved: _onEventSaved }: HeaderProps) {
               onClick={() => setViewDropdownOpen(!viewDropdownOpen)}
               aria-haspopup="menu"
               aria-expanded={viewDropdownOpen}
-              className="flex items-center gap-1.5 px-5 py-2 text-[16px] font-medium text-[#202124] dark:text-gray-100 border border-[#9aa0a6] dark:border-[#5f6368] rounded-full hover:text-[#1a73e8] hover:border-[#1a73e8] hover:bg-[#e8f0fe] dark:hover:bg-[#2d2d2d] dark:hover:text-[#8ab4f8] dark:hover:border-[#8ab4f8] transition-colors min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]"
+              className="flex items-center gap-1 md:gap-1.5 px-3 md:px-5 py-1.5 md:py-2 text-[14px] md:text-[16px] font-medium text-[#202124] dark:text-gray-100 border border-[#9aa0a6] dark:border-[#5f6368] rounded-full hover:text-[#1a73e8] hover:border-[#1a73e8] hover:bg-[#e8f0fe] dark:hover:bg-[#2d2d2d] dark:hover:text-[#8ab4f8] dark:hover:border-[#8ab4f8] transition-colors min-h-[32px] md:min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8]"
             >
               {VIEWS.find((v) => v.value === currentView)?.label}
               <svg
