@@ -84,10 +84,12 @@ export async function GET(request: NextRequest) {
   type PrismaEvent = (typeof events)[number]
 
   // Separate recurring parent events from regular and exception events
-const recurring = events.filter(e => e.recurrenceRule && !e.isException)
-const exceptions = events.filter(e => e.isException)
-const regular = events.filter(e => !e.recurrenceRule && !e.isException)
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const recurring = events.filter((e: any) => e.recurrenceRule && !e.isException)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const exceptions = events.filter((e: any) => e.isException)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const regular = events.filter((e: any) => !e.recurrenceRule && !e.isException)
   // Expand recurring events
   const expanded: typeof events = []
   for (const event of recurring) {
