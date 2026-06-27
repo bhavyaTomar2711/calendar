@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Event } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { expandRecurring, type EventLike } from '@/lib/utils/recurrence'
